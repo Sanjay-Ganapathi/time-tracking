@@ -1,0 +1,62 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Employee {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  apiKey             String              @unique @default(uuid())
+  activated          Boolean             @default(false)
+  projectAssignments ProjectAssignment[]
+  timeEntries        TimeEntry[]
+}
+
+model Project {
+  id                 String              @id @default(cuid())
+  name               String
+  tasks              Task[]
+  projectAssignments ProjectAssignment[]
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  name        String
+  project     Project     @relation(fields: [projectId], references: [id])
+  projectId   String
+  timeEntries TimeEntry[]
+}
+
+model ProjectAssignment {
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  String
+
+  @@id([employeeId, projectId])
+}
+
+model TimeEntry {
+  id          String       @id @default(cuid())
+  startTime   DateTime     @default(now())
+  endTime     DateTime?
+  employee    Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId  String
+  task        Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId      String
+  screenshots Screenshot[]
+}
+
+model Screenshot {
+  id             String    @id @default(cuid())
+  timestamp      DateTime  @default(now())
+  imageUrl       String
+  permissionFlag Boolean   @default(true)
+  timeEntry      TimeEntry @relation(fields: [timeEntryId], references: [id], onDelete: Cascade)
+  timeEntryId    String
+}
