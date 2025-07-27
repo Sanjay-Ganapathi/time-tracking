@@ -1,12 +1,12 @@
 
 import express, { Express, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import employeeRouter from './routes/employee.routes'
 const app: Express = express();
 
 app.use(express.json());
 
+
+app.use('/api/employees', employeeRouter)
 
 app.get('/', (req: Request, res: Response) => {
     res.send('T3 API Server (TypeScript) is running!');
