@@ -2,7 +2,8 @@
 
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-
+import fs from 'fs';
+import path from 'path'
 const router = Router();
 
 
@@ -85,5 +86,50 @@ router.post('/stop', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to stop time entry' });
     }
 });
+
+router.post('/:timeEntryId/screenshots', async (req: Request, res: Response) => {
+    try {
+        const { timeEntryId } = req.params;
+
+        const { imageBase64, permissionFlag } = req.body;
+
+        if (!imageBase64 || permissionFlag === undefined) {
+            return res.status(400).json({ error: 'imageBase64 and permissionFlag are required.' });
+        }
+
+
+        const newScreenshot = await prisma.screenshot.create({
+            data: {
+                timeEntryId,
+                permissionFlag,
+                imageUrl: '',
+            },
+        });
+
+
+        const imageBuffer = Buffer.from(imageBase64, 'base64');
+        const fileName = `${newScreenshot.id}.png`;
+        const filePath = path.join('public', 'screenshots', fileName);
+
+        fs.writeFileSync(filePath, imageBuffer);
+
+
+        const updatedScreenshot = await prisma.screenshot.update({
+            where: { id: newScreenshot.id },
+            data: { imageUrl: `/${filePath}` },
+        });
+
+        res.status(201).json(updatedScreenshot);
+    } catch (error: any) {
+        console.error(error);
+
+        if (error.code === 'P2003') {
+            return res.status(404).json({ error: 'Time Entry not found' });
+        }
+        res.status(500).json({ error: 'Failed to upload screenshot' });
+    }
+});
+
+
 
 export default router;
