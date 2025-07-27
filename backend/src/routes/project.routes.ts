@@ -16,7 +16,16 @@ router.post('/', async (req: Request, res: Response) => {
         const newProject = await prisma.project.create({
             data: {
                 name,
+
+                tasks: {
+                    create: {
+                        name: "Default Task"
+                    }
+                }
             },
+            include: {
+                tasks: true
+            }
         });
 
         res.status(201).json(newProject);
