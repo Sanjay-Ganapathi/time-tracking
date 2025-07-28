@@ -96,6 +96,7 @@ function createWindow() {
       preload: PRELOAD_PATH,
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: false,
     },
   })
 
@@ -104,7 +105,8 @@ function createWindow() {
     win.webContents.openDevTools()
   } else {
 
-    win.loadFile(path.join(__dirname, '../renderer/index.html'))
+    win.loadFile(path.join(__dirname, '../dist/index.html'))
+
   }
 }
 
