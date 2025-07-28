@@ -71,6 +71,12 @@ pnpm install
 pnpm dev
 ```
 
+For building electron web app follow this
+
+```bash
+pnpm build
+```
+
 The Electron application window should appear.
 
 ### 3. Onboarding Web App
