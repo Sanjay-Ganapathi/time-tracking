@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useState, useEffect, FormEvent } from 'react';
 
@@ -7,14 +5,20 @@ import { useState, useEffect, FormEvent } from 'react';
 declare global {
   interface Window {
     t3: {
-      getAppName: () => Promise<string>;
 
+      getAppName: () => Promise<string>;
       login: (apiKey: string) => Promise<any | null>;
+
+
+      getProjects: (employeeId: string) => Promise<any[]>;
+      startTimer: (employeeId: string, taskId: string) => Promise<any | null>;
+      stopTimer: (employeeId: string) => Promise<any | null>;
+
+      getScreenId: () => Promise<string | null>;
+      captureScreen: (sourceId: string) => Promise<string>;
     };
   }
 }
-
-
 
 const LoginPage = ({ onLoginSuccess, onLoginFail }) => {
   const [apiKey, setApiKey] = useState('');
@@ -74,20 +78,15 @@ const DashboardPage = ({ employee, onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
   const [activeTimeEntryId, setActiveTimeEntryId] = useState(null);
-  const screenshotIntervalRef = React.useRef(null);
-
-
 
   const intervalRef = React.useRef(null);
+  const screenshotIntervalRef = React.useRef(null);
 
   useEffect(() => {
     window.t3.getProjects(employee.id)
       .then(fetchedProjects => {
-        console.log('Fetched projects:', fetchedProjects);
         setProjects(fetchedProjects);
-
         if (fetchedProjects.length > 0 && fetchedProjects[0].tasks.length > 0) {
           setSelectedTaskId(fetchedProjects[0].tasks[0].id);
         }
@@ -105,18 +104,53 @@ const DashboardPage = ({ employee, onLogout }) => {
   const stopClock = () => {
     clearInterval(intervalRef.current);
   };
+
+
+  const takeAndUploadScreenshot = async (currentAactiveTimeEntryId) => {
+    let permissionFlag = true;
+    let imageBase64 = '';
+
+    try {
+
+      const sourceId = await window.t3.getScreenId();
+      if (sourceId) {
+
+        imageBase64 = await window.t3.captureScreen(sourceId);
+      } else {
+        permissionFlag = false;
+      }
+    } catch (error) {
+      console.error('Screenshot capture failed:', error);
+      permissionFlag = false;
+    }
+
+    try {
+      await fetch('http://localhost:3000/api/screenshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timeEntryId: currentAactiveTimeEntryId,
+          imageBase64,
+          permissionFlag,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to upload screenshot:', error);
+    }
+  };
+
+
   const handleStartStopClick = async () => {
     if (isTimerRunning) {
-      // Logic to STOP the timer
       const result = await window.t3.stopTimer(employee.id);
       if (result) {
         setIsTimerRunning(false);
         stopClock();
+
         clearInterval(screenshotIntervalRef.current);
         setActiveTimeEntryId(null);
       }
     } else {
-      // Logic to START the timer
       if (!selectedTaskId) {
         alert('Please select a project to track time against.');
         return;
@@ -127,16 +161,15 @@ const DashboardPage = ({ employee, onLogout }) => {
         setIsTimerRunning(true);
         startClock();
 
-        window.t3.takeScreenshot(result.id);
+
+        takeAndUploadScreenshot(result.id);
 
         screenshotIntervalRef.current = setInterval(() => {
-          window.t3.takeScreenshot(result.id);
-        }, 30000);
-
+          takeAndUploadScreenshot(result.id);
+        }, 60000);
       }
     }
   };
-
 
   const formatTime = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
@@ -166,7 +199,6 @@ const DashboardPage = ({ employee, onLogout }) => {
           className="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-2.5"
         >
           {projects.map(project => (
-            // Assuming 1:1 project to task mapping for now
             project.tasks.length > 0 &&
             <option key={project.tasks[0].id} value={project.tasks[0].id}>
               {project.name}
@@ -192,11 +224,7 @@ const DashboardPage = ({ employee, onLogout }) => {
   );
 };
 
-
-
-
 function App() {
-
   const [employee, setEmployee] = useState(null);
 
   const handleLoginSuccess = (employeeData) => {
@@ -209,7 +237,6 @@ function App() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
-
       {employee ? (
         <DashboardPage employee={employee} onLogout={handleLogout} />
       ) : (

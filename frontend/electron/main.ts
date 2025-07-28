@@ -76,37 +76,16 @@ ipcMain.handle('stop-timer', async (_event, employeeId: string) => {
   }
 });
 
-ipcMain.handle('take-screenshot', async (_event, timeEntryId: string) => {
-  let permissionFlag = true;
-  let imageBase64 = '';
-
+ipcMain.handle('get-screen-id', async () => {
   try {
-
     const sources = await desktopCapturer.getSources({ types: ['screen'] });
-
     const primarySource = sources.find(source => source.display_id) || sources[0];
-
-    imageBase64 = primarySource.thumbnail.toDataURL();
-
+    return primarySource.id;
   } catch (error) {
-    console.error('Could not capture screen:', error);
-    permissionFlag = false;
+    console.error('Could not get screen source:', error);
+    return null;
   }
-
-  try {
-    await fetch('http://localhost:3000/api/screenshots', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timeEntryId,
-        imageBase64,
-        permissionFlag,
-      }),
-    });
-  } catch (error) {
-    console.error('Failed to upload screenshot:', error);
-  }
-})
+});
 
 
 function createWindow() {
