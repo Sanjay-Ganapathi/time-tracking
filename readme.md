@@ -1,4 +1,4 @@
-# Time Tracking Trial (T3) - An Insightful-like Product
+# Time Tracking Trial (T3)
 
 This repository contains the submission for the Mercor Time Tracking Trial. It includes a backend API, a local Electron desktop application, and a web-based onboarding portal
 
