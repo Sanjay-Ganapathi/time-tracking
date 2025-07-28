@@ -114,6 +114,36 @@ router.get('/:employeeId/projects', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to fetch projects' });
     }
 });
+router.post('/activate', async (req: Request, res: Response) => {
+    try {
+        const { token } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Activation token is required.' });
+        }
+
+        const employee = await prisma.employee.findUnique({
+            where: { activationToken: token },
+        });
+
+        if (!employee) {
+            return res.status(404).json({ error: 'Invalid or expired token.' });
+        }
+
+        await prisma.employee.update({
+            where: { id: employee.id },
+            data: {
+                activated: true,
+                activationToken: null,
+            },
+        });
+
+        res.status(200).json({ message: 'Account activated successfully.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Account activation failed.' });
+    }
+});
 
 
 export default router;

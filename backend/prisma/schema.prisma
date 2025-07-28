@@ -8,11 +8,13 @@ generator client {
 }
 
 model Employee {
-  id                 String              @id @default(cuid())
-  email              String              @unique
-  name               String?
-  apiKey             String              @unique @default(uuid())
-  activated          Boolean             @default(false)
+  id              String  @id @default(cuid())
+  email           String  @unique
+  name            String?
+  apiKey          String  @unique @default(uuid())
+  activated       Boolean @default(false)
+  activationToken String? @unique @default(uuid())
+
   projectAssignments ProjectAssignment[]
   timeEntries        TimeEntry[]
 }
