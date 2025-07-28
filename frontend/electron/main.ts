@@ -1,6 +1,6 @@
 
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, desktopCapturer, ipcMain } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -75,6 +75,38 @@ ipcMain.handle('stop-timer', async (_event, employeeId: string) => {
     return null;
   }
 });
+
+ipcMain.handle('take-screenshot', async (_event, timeEntryId: string) => {
+  let permissionFlag = true;
+  let imageBase64 = '';
+
+  try {
+
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+
+    const primarySource = sources.find(source => source.display_id) || sources[0];
+
+    imageBase64 = primarySource.thumbnail.toDataURL();
+
+  } catch (error) {
+    console.error('Could not capture screen:', error);
+    permissionFlag = false;
+  }
+
+  try {
+    await fetch('http://localhost:3000/api/screenshots', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        timeEntryId,
+        imageBase64,
+        permissionFlag,
+      }),
+    });
+  } catch (error) {
+    console.error('Failed to upload screenshot:', error);
+  }
+})
 
 
 function createWindow() {

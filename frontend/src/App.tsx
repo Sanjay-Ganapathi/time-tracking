@@ -75,6 +75,11 @@ const DashboardPage = ({ employee, onLogout }) => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
+  const [activeTimeEntryId, setActiveTimeEntryId] = useState(null);
+  const screenshotIntervalRef = React.useRef(null);
+
+
+
   const intervalRef = React.useRef(null);
 
   useEffect(() => {
@@ -107,6 +112,8 @@ const DashboardPage = ({ employee, onLogout }) => {
       if (result) {
         setIsTimerRunning(false);
         stopClock();
+        clearInterval(screenshotIntervalRef.current);
+        setActiveTimeEntryId(null);
       }
     } else {
       // Logic to START the timer
@@ -116,8 +123,16 @@ const DashboardPage = ({ employee, onLogout }) => {
       }
       const result = await window.t3.startTimer(employee.id, selectedTaskId);
       if (result) {
+        setActiveTimeEntryId(result.id);
         setIsTimerRunning(true);
         startClock();
+
+        window.t3.takeScreenshot(result.id);
+
+        screenshotIntervalRef.current = setInterval(() => {
+          window.t3.takeScreenshot(result.id);
+        }, 30000);
+
       }
     }
   };

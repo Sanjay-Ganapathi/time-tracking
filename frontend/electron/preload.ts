@@ -10,6 +10,7 @@ const api = {
   getProjects: (employeeId: string): Promise<any[]> => ipcRenderer.invoke('get-projects', employeeId),
   startTimer: (employeeId: string, taskId: string): Promise<any | null> => ipcRenderer.invoke('start-timer', employeeId, taskId),
   stopTimer: (employeeId: string): Promise<any | null> => ipcRenderer.invoke('stop-timer', employeeId),
+  takeScreenshot: (timeEntryId: string): Promise<void> => ipcRenderer.invoke('take-screenshot', timeEntryId),
 
 };
 
