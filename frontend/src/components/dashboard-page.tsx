@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Employee, Project } from '../types/types';
 
+
 interface DashboardPageProps {
     employee: Employee;
     onLogout: () => void;
@@ -17,8 +18,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ employee, onLogout
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [activeTimeEntryId, setActiveTimeEntryId] = useState<string | null>(null);
 
+
     const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
     const screenshotIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+
 
     useEffect(() => {
         window.t3.getProjects(employee.id)
@@ -31,6 +34,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ employee, onLogout
             });
     }, [employee.id]);
 
+    useEffect(() => {
+
+        if (isTimerRunning && activeTimeEntryId) {
+
+
+
+            takeAndUploadScreenshot();
+
+            screenshotIntervalRef.current = setInterval(() => {
+                takeAndUploadScreenshot();
+            }, 10000);
+        }
+
+
+        return () => {
+            if (screenshotIntervalRef.current) {
+                clearInterval(screenshotIntervalRef.current);
+            }
+        };
+    }, [isTimerRunning, activeTimeEntryId]);
+
+
     const startClock = () => {
         setElapsedSeconds(0);
         intervalRef.current = setInterval(() => {
@@ -42,8 +67,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ employee, onLogout
         if (intervalRef.current) clearInterval(intervalRef.current);
     };
 
-    const takeAndUploadScreenshot = async () => {
 
+    const takeAndUploadScreenshot = async () => {
         if (!activeTimeEntryId) {
             console.error("Cannot take screenshot, no active time entry ID.");
             return;
@@ -81,31 +106,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ employee, onLogout
 
     const handleStartStopClick = async () => {
         if (isTimerRunning) {
+            // Stop the timer
             const result = await window.t3.stopTimer(employee.id);
             if (result) {
                 setIsTimerRunning(false);
-                stopClock();
-                if (screenshotIntervalRef.current) clearInterval(screenshotIntervalRef.current);
                 setActiveTimeEntryId(null);
+                stopClock();
+
             }
         } else {
+
             if (!selectedTaskId) {
                 alert('Please select a project to track time against.');
                 return;
             }
             const result = await window.t3.startTimer(employee.id, selectedTaskId);
             if (result) {
+
                 setActiveTimeEntryId(result.id);
                 setIsTimerRunning(true);
                 startClock();
-
-                takeAndUploadScreenshot();
-                screenshotIntervalRef.current = setInterval(() => {
-                    takeAndUploadScreenshot();
-                }, 10000);
             }
         }
     };
+
 
     const formatTime = (totalSeconds: number) => {
         const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
@@ -117,6 +141,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ employee, onLogout
     if (isLoading) {
         return <p className="text-white">Loading projects...</p>;
     }
+
 
     return (
         <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">

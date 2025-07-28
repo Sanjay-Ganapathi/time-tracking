@@ -96,7 +96,7 @@ function createWindow() {
       preload: PRELOAD_PATH,
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,
+      // webSecurity: false,
     },
   })
 
